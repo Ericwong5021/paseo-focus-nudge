@@ -50,6 +50,7 @@ export function showDocumentToast(
   title: string,
   options: {
     message: string;
+    context?: string;
     durationMs: number;
     placement: "top" | "bottom-end";
     onPress(): void;
@@ -71,7 +72,10 @@ export function showDocumentToast(
   frame.setAttribute("aria-live", "polite");
   const card = browser.document.createElement("button");
   card.type = "button";
-  card.setAttribute("aria-label", `${title}，${options.message}，打开对话`);
+  card.setAttribute(
+    "aria-label",
+    `${options.context ? `${options.context}，` : ""}${title}，${options.message}，打开对话`,
+  );
   card.style.cssText =
     "display:block;text-align:left;pointer-events:auto;width:360px;max-width:100%;padding:14px 18px;border:0;border-radius:14px;background:Canvas;color:CanvasText;color-scheme:light dark;box-shadow:0 6px 28px #0003;font:14px/1.45 system-ui;cursor:pointer;overflow:hidden";
   const heading = browser.document.createElement("div");
@@ -82,6 +86,13 @@ export function showDocumentToast(
   body.textContent = options.message;
   body.style.cssText =
     "display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap";
+  if (options.context) {
+    const context = browser.document.createElement("div");
+    context.textContent = options.context;
+    context.style.cssText =
+      "font-size:12px;opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px";
+    card.appendChild(context);
+  }
   card.appendChild(heading);
   card.appendChild(body);
   frame.appendChild(card);

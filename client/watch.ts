@@ -19,12 +19,16 @@ export function startCompletionWatch(client: PluginClientContext): () => void {
       : isDocumentHidden();
   const show = (event: TurnFinishedEvent) => {
     const title = event.agentTitle || "对话已结束";
+    const context = [...new Set([event.projectTitle, event.workspaceTitle].filter(Boolean))].join(
+      " · ",
+    );
     const onPress = () =>
       client.openScreen({ screenId: "open-conversation", params: { agentId: event.agentId } });
     const durationMs = event.dismissSeconds * 1000;
     if (phone) {
       showNativeBubble({
         title,
+        context,
         message: event.message,
         durationMs,
         failed: event.outcome.kind === "failed",
@@ -32,6 +36,7 @@ export function startCompletionWatch(client: PluginClientContext): () => void {
       });
     } else {
       showDocumentToast(title, {
+        context,
         message: event.message,
         durationMs,
         placement: "bottom-end",

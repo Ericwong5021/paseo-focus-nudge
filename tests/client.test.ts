@@ -28,6 +28,8 @@ const event = {
   eventId: "a:t",
   agentId: "agent-1",
   agentTitle: "Demo",
+  projectTitle: "我的项目",
+  workspaceTitle: "主工作区",
   workspaceId: "workspace-1",
   turnId: "turn-1",
   message: "Finished",
@@ -51,7 +53,12 @@ describe("completion bubble", () => {
     const stop = startCompletionWatch(h as never);
     await vi.advanceTimersByTimeAsync(1500);
     expect(bubble.show).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Demo", message: "Finished", durationMs: 3000 }),
+      expect.objectContaining({
+        title: "Demo",
+        context: "我的项目 · 主工作区",
+        message: "Finished",
+        durationMs: 3000,
+      }),
     );
     bubble.show.mock.calls[0]?.[0].onPress();
     expect(h.openScreen).toHaveBeenCalledWith({
@@ -88,7 +95,11 @@ describe("completion bubble", () => {
     await vi.advanceTimersByTimeAsync(1500);
     expect(web.show).toHaveBeenCalledWith(
       "Demo",
-      expect.objectContaining({ durationMs: 3000, placement: "bottom-end" }),
+      expect.objectContaining({
+        context: "我的项目 · 主工作区",
+        durationMs: 3000,
+        placement: "bottom-end",
+      }),
     );
     web.show.mock.calls[0]?.[1].onPress();
     expect(h.openScreen).toHaveBeenCalledWith({

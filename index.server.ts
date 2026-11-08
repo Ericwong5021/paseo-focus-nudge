@@ -1,4 +1,5 @@
 import type { PluginServerContext, PluginHandlerContext } from "@getpaseo/plugin/server";
+import { basename } from "node:path";
 import { notifyDesktop } from "./server/desktop-notify";
 import { pushToPhone, getPushStatus, disposePushChecks } from "./server/phone-push";
 import {
@@ -42,12 +43,13 @@ export default function contribute(server: PluginServerContext) {
     agentId: string | null,
     workspaceId: string | null,
     serverId: string,
+    title = TITLE,
   ) {
     if (target === "desktop") {
-      return notifyDesktop({ title: TITLE, message, sound: values.desktop.sound });
+      return notifyDesktop({ title, message, sound: values.desktop.sound });
     }
     return pushToPhone({
-      title: TITLE,
+      title,
       message,
       strong: values.phone.strong,
       eventId,
@@ -79,19 +81,39 @@ export default function contribute(server: PluginServerContext) {
       if (completedTurns.size > 1000) completedTurns.delete(completedTurns.values().next().value!);
       const state = await settings.read();
       if (state.status !== "ready") return;
-      const eventSequence = ++sequence;
       const normalized: TurnFinishedEvent["outcome"] =
         outcome.kind === "failed"
           ? { kind: "failed", error: outcome.error.message.slice(0, 400) }
           : outcome.kind === "canceled"
             ? { kind: "canceled", reason: outcome.reason.slice(0, 400) }
             : { kind: "completed" };
-      const suffix =
+      const status =
         normalized.kind === "failed"
-          ? `\n对话失败：${normalized.error}`
+          ? `本轮对话失败：${normalized.error}`
           : normalized.kind === "canceled"
-            ? `\n对话已取消：${normalized.reason}`
-            : "";
+            ? `本轮对话已取消：${normalized.reason}`
+            : "本轮对话已完成。";
+      const messageFor = (message: string) => {
+        const custom = message.trim().slice(0, 400);
+        return (
+          !custom || custom === DEFAULT_MESSAGE ? `${status}点击查看结果。` : `${status}\n${custom}`
+        ).slice(0, 800);
+      };
+      // Hook titles may precede an automatic title update. Refresh once for all
+      // recipients and use the same project display names as Paseo's own UI.
+      const snapshot = await paseo.agents
+        .ref(agent.id)
+        .refresh()
+        .catch(() => null);
+      const agentTitle =
+        snapshot?.agent.title?.trim() ||
+        agent.title?.trim() ||
+        `未命名对话 (${agent.id.slice(0, 8)})`;
+      const projectTitle =
+        snapshot?.project?.projectName?.trim() || `目录：${basename(agent.cwd) || agent.cwd}`;
+      const workspaceTitle = snapshot?.project?.workspaceName?.trim() || null;
+      const notificationTitle = `${projectTitle} · ${agentTitle}`;
+      const eventSequence = ++sequence;
       const backgroundTargets = new Set<NudgeTarget>();
       for (const [id, device] of devices) {
         const lease = device.background ? BACKGROUND_LEASE : FOREGROUND_LEASE;
@@ -110,13 +132,12 @@ export default function contribute(server: PluginServerContext) {
             sequence: eventSequence,
             eventId,
             agentId: agent.id,
-            agentTitle: agent.title,
+            agentTitle,
+            projectTitle,
+            workspaceTitle,
             workspaceId: agent.workspaceId,
             turnId,
-            message: `${profile.message.trim().slice(0, 400) || DEFAULT_MESSAGE}${suffix}`.slice(
-              0,
-              800,
-            ),
+            message: messageFor(profile.message),
             outcome: normalized,
           });
           device.events = device.events.slice(-50);
@@ -124,7 +145,7 @@ export default function contribute(server: PluginServerContext) {
       }
       await Promise.allSettled(
         [...backgroundTargets].map(async (target) => {
-          const message = `${state.values[target].message.trim().slice(0, 400) || DEFAULT_MESSAGE}${suffix}`;
+          const message = messageFor(state.values[target].message);
           const result = await deliver(
             target,
             state.values,
@@ -133,6 +154,7 @@ export default function contribute(server: PluginServerContext) {
             agent.id,
             agent.workspaceId,
             await resolveHostId(paseo),
+            notificationTitle,
           );
           if (!result.delivered) console.warn(`[focus-nudge] ${target}: ${result.detail}`);
         }),

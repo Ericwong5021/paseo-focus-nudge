@@ -13,6 +13,8 @@ export const turnFinishedEvent = z.object({
   eventId: z.string(),
   agentId: z.string(),
   agentTitle: z.string().nullable(),
+  projectTitle: z.string().nullable().default(null),
+  workspaceTitle: z.string().nullable().default(null),
   workspaceId: z.string().nullable(),
   turnId: z.string().nullable(),
   message: z.string().min(1).max(800),

@@ -13,7 +13,7 @@ Conversation completion reminders for [Paseo](https://paseo.sh). Keep the plugin
 | Phone in the background | Expo push requesting a system banner |
 | Desktop window unfocused or minimized | System notification on the daemon computer, plus a tappable in-app bubble |
 
-Successful, failed, and canceled turns all trigger reminders. Changing focus, opening another app, or locking the phone does not itself generate a notification. Phone and desktop settings are independent, shared across clients of the same daemon. The settings UI currently uses Simplified Chinese.
+Bubbles show the project/workspace, conversation title, and turn outcome separately. System notification titles also identify the project and conversation; unavailable project metadata falls back to the working directory name. Successful, failed, and canceled turns all trigger reminders. Changing focus, opening another app, or locking the phone does not itself generate a notification. Phone and desktop settings are independent, shared across clients of the same daemon. The settings UI currently uses Simplified Chinese.
 
 ## Install
 

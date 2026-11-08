@@ -5,6 +5,7 @@ import { AccessibilityInfo, Animated, Platform, Pressable, Text, View } from "re
 
 export interface Bubble {
   title: string;
+  context?: string;
   message: string;
   durationMs: number;
   failed: boolean;
@@ -56,7 +57,7 @@ export function NativeBubbleBridge({ theme }: PluginSidebarItemProps) {
         <BubbleEntrance key={`${Date.now()}-${Math.random()}`}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${bubble.title}，${bubble.message}，打开对话`}
+            accessibilityLabel={`${bubble.context ? `${bubble.context}，` : ""}${bubble.title}，${bubble.message}，打开对话`}
             onPress={bubble.onPress}
             style={({ pressed }) => ({
               opacity: pressed ? 0.7 : 1,
@@ -71,6 +72,14 @@ export function NativeBubbleBridge({ theme }: PluginSidebarItemProps) {
                 color={theme.colors.foreground}
               />
               <View style={{ flexShrink: 1, gap: 3 }}>
+                {bubble.context ? (
+                  <Text
+                    numberOfLines={1}
+                    style={{ color: theme.colors.foregroundMuted, fontSize: 12 }}
+                  >
+                    {bubble.context}
+                  </Text>
+                ) : null}
                 <Text
                   numberOfLines={1}
                   style={{ color: theme.colors.foreground, fontSize: 14, fontWeight: "600" }}
