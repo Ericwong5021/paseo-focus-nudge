@@ -1,8 +1,15 @@
 import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { NudgeSettings } from "./client/settings";
 import { startCompletionWatch } from "./client/watch";
+import { NativeBubbleBridge, OpenConversation } from "./client/bubble";
 
 export default function contribute(client: PluginClientContext) {
+  client.addSidebarHeaderItem({
+    id: "bubble-bridge",
+    title: "对话完成气泡",
+    Component: NativeBubbleBridge,
+  });
+  client.addScreen({ id: "open-conversation", title: "打开对话", Component: OpenConversation });
   client.addSettingsScreen({
     id: "nudge",
     title: "对话完成提醒",

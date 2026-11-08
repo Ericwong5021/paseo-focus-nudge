@@ -8,10 +8,10 @@ Conversation completion reminders for [Paseo](https://paseo.sh). Keep the plugin
 
 | Device state | Reminder |
 | --- | --- |
-| Paseo in the foreground on iOS / Android | In-app alert; uses a toast when the host provides `showToast` |
-| Paseo in the foreground on desktop / browser | In-app toast |
+| Paseo in the foreground on iOS / Android | Non-blocking, tappable toast at the top of the app |
+| Paseo in the foreground on desktop / browser | Tappable bubble rising from the lower-right corner |
 | Phone in the background | Expo push requesting a system banner |
-| Desktop window unfocused or minimized | System notification on the daemon computer |
+| Desktop window unfocused or minimized | System notification on the daemon computer, plus a tappable in-app bubble |
 
 Successful, failed, and canceled turns all trigger reminders. Changing focus, opening another app, or locking the phone does not itself generate a notification. Phone and desktop settings are independent, shared across clients of the same daemon. The settings UI currently uses Simplified Chinese.
 
@@ -26,7 +26,7 @@ paseo plugin ls focus-nudge
 
 Enable plugins in Paseo settings first. Plugins are trusted code: the server entry runs on your daemon computer, and the client entry runs inside Paseo.
 
-Open **Settings → Plugins → Conversation completion reminder**. Set the phone and desktop switches, messages, desktop sound, and optional phone time-sensitive priority. Open Paseo on the phone while connected to the same daemon and allow notifications before switching to another app.
+Open **Settings → Plugins → Conversation completion reminder**. Set the phone and desktop switches, messages, desktop system-notification sound, optional phone time-sensitive priority, and an in-app duration of 1–30 seconds (default 5). Open Paseo on the phone while connected to the same daemon and allow notifications before switching to another app.
 
 ```sh
 paseo plugin update focus-nudge
@@ -46,6 +46,8 @@ paseo plugin install "$PWD"
 paseo plugin reload focus-nudge
 ```
 
+The plugin contributes an invisible sidebar component to access Paseo's existing toast layer on mobile. Keep **Conversation completion bubble** enabled in Settings → Sidebar. Taps open a registered plugin screen, which uses Paseo's surface navigation to select the completed conversation.
+
 A plugin already configured with this ID should be updated or reloaded. Removing and reinstalling it deletes its stored settings.
 
 ## Phone acceptance check
@@ -55,16 +57,17 @@ A plugin already configured with this ID should be updated or reloaded. Removing
 3. Switch apps without running a turn. Expect no reminder.
 4. Try a failed turn and cancel a running turn. Each should identify its outcome.
 
-The background test button explicitly sends a system notification even while the settings page is open. It tests push registration and delivery, not turn completion or foreground behavior.
+The background test button waits five seconds so you can switch apps before delivery. The settings page shows whether Expo accepted the push, the mobile push service accepted it, or delivery failed. A successful service receipt is not proof that Android displayed a notification.
 
 ## Platform limits
 
 - iOS banners, sound, Focus modes, and time-sensitive delivery remain controlled by system notification settings. The plugin cannot force a banner when the OS disallows it.
-- Android notification channels are owned by the app. Set Paseo's notification channel to high importance / allow pop-ups in Android settings for heads-up banners. This plugin cannot change an installed app's native channel through the 0.15.3 SDK.
+- Android notification channels are owned by the app. Allow Paseo notifications and set its default notification category to high importance / allow pop-ups in Android settings for heads-up banners. The plugin uses the existing `default` channel, not a new channel that the installed app has never created. This plugin cannot change an installed app's native channel through the 0.15.3 SDK.
 - Desktop system notifications run on the daemon computer, not on a remote browser's machine. macOS uses `osascript`; Linux needs `notify-send`. Windows desktop system delivery is not implemented.
 - A foreground RPC poll runs every 1.5 seconds. The phone reports background state before suspension, and the daemon retains it for up to 24 hours. A daemon restart or plugin reload clears presence; reopen Paseo afterward. A background state update that cannot reach the daemon cannot arm push delivery.
 - Phone pushes use every unexpired Expo token registered with that daemon. Multiple phones can receive the same push; token-specific routing is not available in this version.
-- Rapid completions can replace a desktop toast. Old mobile hosts use native in-app alerts instead of non-blocking toasts.
+- Rapid completions replace a desktop bubble. Native mobile reminders use Paseo's host toast renderer, including a small adapter for its ReactNode content support in 0.15.3; the published SDK types only describe string content. Test this adapter when upgrading Paseo.
+- Clicking a completion notification carries both the host and conversation ID. A standalone test notification opens the host because it has no conversation ID.
 
 ## Privacy
 

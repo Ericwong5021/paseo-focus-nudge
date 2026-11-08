@@ -1,17 +1,13 @@
 import type { PluginClientContext } from "@getpaseo/plugin/client";
-import { Alert, AppState, Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 import { isDocumentHidden, showDocumentToast, subscribeDocumentVisibility } from "./web";
+import { showNativeBubble } from "./bubble";
 import { disconnectRpc, syncRpc, type TurnFinishedEvent } from "../shared/nudge";
-
-type ToastClient = PluginClientContext & {
-  showToast?: (message: string, options?: { variant?: "info" | "error" | "warning" }) => void;
-};
 
 export function startCompletionWatch(client: PluginClientContext): () => void {
   const phone = Platform.OS === "ios" || Platform.OS === "android";
   const target = phone ? "phone" : "desktop";
   const clientId = `${target}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const toastClient = client as ToastClient;
   let stopped = false;
   let inFlight = false;
   let pending = false;
@@ -22,19 +18,27 @@ export function startCompletionWatch(client: PluginClientContext): () => void {
       ? AppState.currentState === "background" || AppState.currentState === "inactive"
       : isDocumentHidden();
   const show = (event: TurnFinishedEvent) => {
-    const title = event.agentTitle ? `Paseo · ${event.agentTitle}` : "Paseo 对话已结束";
-    const message = `${title}\n${event.message}`;
-    if (toastClient.showToast) {
-      toastClient.showToast(message, {
-        variant: event.outcome.kind === "failed" ? "error" : "info",
+    const title = event.agentTitle || "对话已结束";
+    const onPress = () =>
+      client.openScreen({ screenId: "open-conversation", params: { agentId: event.agentId } });
+    const durationMs = event.dismissSeconds * 1000;
+    if (phone) {
+      showNativeBubble({
+        title,
+        message: event.message,
+        durationMs,
+        failed: event.outcome.kind === "failed",
+        onPress,
       });
-    } else if (phone) {
-      Alert.alert(title, event.message);
     } else {
-      showDocumentToast(message);
+      showDocumentToast(title, {
+        message: event.message,
+        durationMs,
+        placement: "bottom-end",
+        onPress,
+      });
     }
   };
-
   const sync = async () => {
     if (stopped) return;
     if (inFlight) {
@@ -48,9 +52,8 @@ export function startCompletionWatch(client: PluginClientContext): () => void {
       const result = await client.rpc(syncRpc, { clientId, target, background, after: cursor });
       if (stopped) return;
       cursor = result.cursor;
-      if (!background && !isBackground()) {
+      if (!phone || (!background && !isBackground()))
         for (const event of result.events) show(event);
-      }
     } catch (error) {
       if (!stopped) console.warn("[focus-nudge] Completion sync failed", error);
     } finally {
@@ -59,7 +62,7 @@ export function startCompletionWatch(client: PluginClientContext): () => void {
         if (pending) {
           pending = false;
           void sync();
-        } else if (!isBackground()) timer = setTimeout(() => void sync(), 1500);
+        } else if (!phone || !isBackground()) timer = setTimeout(() => void sync(), 1500);
       }
     }
   };
