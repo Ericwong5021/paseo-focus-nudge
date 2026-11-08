@@ -1,0 +1,28 @@
+name: Bug report / 问题反馈
+description: Report a reproducible problem without sharing private data.
+body:
+  - type: input
+    id: environment
+    attributes:
+      label: Paseo version and OS / 版本与系统
+      description: Include daemon and app versions and plugin commit if known.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps and actual result / 复现步骤和实际表现
+      description: Include foreground/background state and whether a turn ended.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result / 期望表现
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted evidence / 脱敏证据
+      description: Never include Expo tokens, private transcripts, secrets, or full host configs.

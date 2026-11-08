@@ -1,0 +1,44 @@
+{
+  "name": "paseo-focus-nudge",
+  "private": true,
+  "version": "0.1.0",
+  "files": [
+    "paseo-plugin.json",
+    "OVERVIEW.md",
+    "OVERVIEW.zh-CN.md",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE",
+    "index.client.tsx",
+    "index.server.ts",
+    "client/",
+    "server/",
+    "shared/",
+    "!**/*.test.ts"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@getpaseo/plugin": "0.15.3",
+    "@tanstack/react-query": "^5.90.11",
+    "@types/node": "^24.19.2",
+    "@types/react": "~19.2.0",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.12",
+    "zod": "^4.4.3"
+  },
+  "description": "Conversation completion reminders for Paseo on desktop and mobile.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ericwong5021/paseo-focus-nudge.git"
+  },
+  "homepage": "https://github.com/Ericwong5021/paseo-focus-nudge#readme",
+  "bugs": {
+    "url": "https://github.com/Ericwong5021/paseo-focus-nudge/issues"
+  }
+}

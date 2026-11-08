@@ -1,0 +1,9 @@
+{
+  "id": "focus-nudge",
+  "name": "Conversation completion reminder",
+  "description": "When a Paseo conversation ends, show an in-app popup in the foreground or a system notification in the background.",
+  "media": [],
+  "requirements": {
+    "paseo": ">=0.15.3"
+  }
+}
